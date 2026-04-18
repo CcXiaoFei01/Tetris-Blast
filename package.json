@@ -1,0 +1,12 @@
+{
+  "name": "wood-block-tiktok-ready",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Wood block puzzle game.",
+  "scripts": {
+    "build:minigame": "node ./scripts/build-minigame.mjs",
+    "dev": "node ./scripts/dev-server.mjs",
+    "check": "node --check ./script.js",
+    "test:windows": "node ./scripts/dev-server.mjs --open"
+  }
+}

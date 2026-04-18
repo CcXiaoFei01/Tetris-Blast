@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <script src="https://connect.tiktok-minis.com/game/sdk.js"></script>
+    <script src="./runtime-config.js"></script>
+    <script>
+      (function initTikTokMiniSdk() {
+        const clientKey = window.GAME_RUNTIME_CONFIG?.tiktok?.clientKey || "";
+        if (!clientKey || !window.TTMinis?.game || typeof window.TTMinis.game.init !== "function") {
+          return;
+        }
+        try {
+          window.TTMinis.game.init({ clientKey });
+        } catch {
+          // Keep browser-mode local development working when the SDK is unavailable.
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#73461f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>&#x4FC4;&#x7F57;&#x65AF;&#x65B9;&#x5757;&#x4E4B;&#x6D88;&#x9664;&#x9ED1;&#x5FEB;</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="wood-overlay"></div>
+      <button id="sidebarEntryButton" class="sidebar-entry" type="button" hidden>
+        <span class="sidebar-entry-badge">&#x798F;&#x5229;</span>
+        <strong id="sidebarEntryLabel">&#x9650;&#x5B9A;&#x793C;&#x5305;</strong>
+      </button>
+
+      <section id="startScreen" class="start-screen active">
+        <section class="modal-card intro-card start-card">
+          <p class="eyebrow">&#x76CA;&#x667A;&#x6D88;&#x9664;</p>
+          <h1>
+            <span class="title-kicker">&#x4FC4;&#x7F57;&#x65AF;&#x65B9;&#x5757;</span>
+            <span class="title-main">&#x6D88;&#x9664;<span class="title-accent">&#x9ED1;&#x5757;</span></span>
+          </h1>
+          <p class="home-subtitle">&#x9009;&#x62E9;&#x6A21;&#x5F0F;&#xFF0C;&#x76F4;&#x63A5;&#x5F00;&#x73A9;</p>
+
+          <div class="intro-stats">
+            <div class="intro-stat">
+              <span>&#x5B8C;&#x6210;&#x5BF9;&#x5C40;</span>
+              <strong id="homeGamesValue">0</strong>
+            </div>
+            <div class="intro-stat">
+              <span>&#x5DF2;&#x89E3;&#x9501;&#x5173;&#x5361;</span>
+              <strong id="homeUnlockedLevelValue">1</strong>
+            </div>
+          </div>
+
+          <div class="mode-grid">
+            <section class="mode-card">
+              <p class="eyebrow">&#x95EF;&#x5173;</p>
+              <h3>&#x95EF;&#x5173;&#x6A21;&#x5F0F;</h3>
+              <p class="mode-copy">&#x9010;&#x5173;&#x63A8;&#x8FDB;&#xFF0C;&#x6E05;&#x7A7A;&#x6BCF;&#x5173;&#x9ED1;&#x5757;&#x76EE;&#x6807;&#x3002;</p>
+              <div class="mode-meta">
+                <span>&#x6700;&#x9AD8;&#x5206;</span>
+                <strong id="homeBestValue">0</strong>
+              </div>
+              <button id="startButton" class="primary-button mode-button" type="button">&#x5F00;&#x59CB;&#x95EF;&#x5173;</button>
+            </section>
+            <section class="mode-card">
+              <p class="eyebrow">&#x65E0;&#x5C3D;</p>
+              <h3>&#x65E0;&#x5C3D;&#x6A21;&#x5F0F;</h3>
+              <p class="mode-copy">&#x5206;&#x6570;&#x8D8A;&#x9AD8;&#xFF0C;&#x9ED1;&#x5757;&#x538B;&#x529B;&#x8D8A;&#x5927;&#x3002;</p>
+              <div class="mode-meta">
+                <span>&#x6700;&#x9AD8;&#x5206;</span>
+                <strong id="endlessBestValue">0</strong>
+              </div>
+              <button id="endlessButton" class="secondary-button mode-button" type="button">&#x5F00;&#x59CB;&#x65E0;&#x5C3D;</button>
+            </section>
+          </div>
+
+          <div class="modal-actions">
+            <button id="continueButton" class="secondary-button" type="button">&#x7EE7;&#x7EED;&#x6E38;&#x620F;</button>
+          </div>
+
+          <p id="continueHint" class="runtime-note"></p>
+        </section>
+      </section>
+
+      <main id="gameScreen" class="game-screen game-screen-hidden">
+        <header class="top-bar">
+          <button id="pauseButton" class="icon-button" type="button" aria-label="&#x6682;&#x505C;&#x6E38;&#x620F;">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="5" y="4" width="5" height="16" rx="2"></rect>
+              <rect x="14" y="4" width="5" height="16" rx="2"></rect>
+            </svg>
+          </button>
+
+          <section class="score-card" aria-label="&#x5206;&#x6570;&#x4FE1;&#x606F;">
+            <span class="score-label">&#x5206;&#x6570;</span>
+            <strong id="scoreValue" class="score-value">0</strong>
+            <div class="score-meta">
+              <span id="comboBadge" class="combo-badge">&#x8FDE;&#x51FB; 0</span>
+              <span class="best-pill">&#x6700;&#x9AD8; <strong id="bestScoreValue">0</strong></span>
+            </div>
+          </section>
+
+          <section class="session-card" aria-label="&#x5BF9;&#x5C40;&#x4FE1;&#x606F;">
+            <span id="timeValue" class="session-pill">00:00</span>
+            <span id="phaseValue" class="session-pill">&#x7B2C; 1 / 20 &#x5173;</span>
+            <span id="targetValue" class="session-pill">&#x76EE;&#x6807; 0/0</span>
+          </section>
+        </header>
+
+        <section class="board-panel">
+          <div id="board" class="board" aria-label="10 x 10 &#x68CB;&#x76D8;"></div>
+          <div id="boardMessage" class="board-message"></div>
+        </section>
+
+        <section class="status-strip">
+          <div class="stats-cluster">
+            <div class="mini-stat">
+              <span class="mini-label">&#x884C;&#x6D88;&#x9664;</span>
+              <strong id="rowsClearedValue">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">&#x5217;&#x6D88;&#x9664;</span>
+              <strong id="colsClearedValue">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">&#x6700;&#x9AD8;&#x8FDE;&#x51FB;</span>
+              <strong id="maxComboValue">0</strong>
+            </div>
+          </div>
+
+          <div class="tool-cluster">
+            <button id="undoButton" class="tool-button" type="button">
+              <span class="tool-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 7H4v5"></path>
+                  <path d="M4 12a8 8 0 1 0 2.3-5.6L4 7"></path>
+                </svg>
+              </span>
+              <span>&#x64A4;&#x9500;</span>
+              <strong id="undoCountValue">1</strong>
+            </button>
+
+            <button id="hammerButton" class="tool-button" type="button">
+              <span class="tool-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 4 20 10"></path>
+                  <path d="M11 7 7 11"></path>
+                  <path d="M12 8 20 16"></path>
+                  <path d="M6 12 14 20"></path>
+                  <path d="M4 20 9 15"></path>
+                </svg>
+              </span>
+              <span>&#x9524;&#x5B50;</span>
+              <strong id="hammerCountValue">1</strong>
+            </button>
+          </div>
+        </section>
+
+        <section class="tray-panel" aria-label="&#x65B9;&#x5757;&#x69FD;&#x4F4D;">
+          <button class="tray-slot" type="button" data-slot-index="0" aria-label="&#x69FD;&#x4F4D; 1"></button>
+          <button class="tray-slot" type="button" data-slot-index="1" aria-label="&#x69FD;&#x4F4D; 2"></button>
+          <button class="tray-slot" type="button" data-slot-index="2" aria-label="&#x69FD;&#x4F4D; 3"></button>
+        </section>
+      </main>
+
+      <div id="pauseOverlay" class="overlay">
+        <section class="modal-card">
+          <p class="eyebrow">&#x6682;&#x505C;</p>
+          <h2>&#x6E38;&#x620F;&#x5DF2;&#x6682;&#x505C;</h2>
+          <p class="modal-copy">&#x5207;&#x5230;&#x540E;&#x53F0;&#x65F6;&#x4F1A;&#x81EA;&#x52A8;&#x6682;&#x505C;&#xFF0C;&#x5E76;&#x4FDD;&#x7559;&#x5F53;&#x524D;&#x8FDB;&#x5EA6;&#x3002;</p>
+          <div class="modal-actions">
+            <button id="resumeButton" class="primary-button" type="button">&#x7EE7;&#x7EED;&#x6E38;&#x620F;</button>
+            <button id="homeButton" class="secondary-button" type="button">&#x8FD4;&#x56DE;&#x4E3B;&#x9875;</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="levelCompleteOverlay" class="overlay">
+        <section class="modal-card">
+          <p class="eyebrow">&#x8FC7;&#x5173;</p>
+          <h2 id="levelCompleteTitle">&#x672C;&#x5173;&#x5B8C;&#x6210;</h2>
+          <p id="levelCompleteCopy" class="modal-copy">&#x662F;&#x5426;&#x8FDB;&#x5165;&#x4E0B;&#x4E00;&#x5173;&#xFF1F;</p>
+          <div class="modal-actions">
+            <button id="levelHomeButton" class="secondary-button" type="button">&#x8FD4;&#x56DE;&#x4E3B;&#x9875;</button>
+            <button id="nextLevelButton" class="primary-button" type="button">&#x8FDB;&#x5165;&#x4E0B;&#x4E00;&#x5173;</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="gameOverOverlay" class="overlay">
+        <section class="modal-card">
+          <p class="eyebrow">&#x7ED3;&#x7B97;</p>
+          <h2>&#x672C;&#x5C40;&#x7ED3;&#x675F;</h2>
+          <div class="result-grid">
+            <div class="result-card">
+              <span>&#x6700;&#x7EC8;&#x5F97;&#x5206;</span>
+              <strong id="finalScoreValue">0</strong>
+            </div>
+            <div class="result-card">
+              <span>&#x5386;&#x53F2;&#x6700;&#x9AD8;&#x5206;</span>
+              <strong id="finalBestValue">0</strong>
+            </div>
+            <div class="result-card">
+              <span>&#x603B;&#x884C;&#x6D88;&#x9664;</span>
+              <strong id="finalRowsValue">0</strong>
+            </div>
+            <div class="result-card">
+              <span>&#x603B;&#x5217;&#x6D88;&#x9664;</span>
+              <strong id="finalColsValue">0</strong>
+            </div>
+            <div class="result-card">
+              <span>&#x6700;&#x9AD8;&#x8FDE;&#x51FB;</span>
+              <strong id="finalComboValue">0</strong>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button id="restartButton" class="primary-button" type="button">&#x518D;&#x6765;&#x4E00;&#x5C40;</button>
+            <button id="gameOverHomeButton" class="secondary-button" type="button">&#x8FD4;&#x56DE;&#x4E3B;&#x9875;</button>
+            <button id="shareButton" class="secondary-button" type="button">&#x5206;&#x4EAB;</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="sidebarRewardOverlay" class="overlay">
+        <section class="modal-card sidebar-reward-card">
+          <p class="eyebrow">&#x4FA7;&#x8FB9;&#x680F;&#x798F;&#x5229;</p>
+          <h2 id="sidebarRewardTitle">&#x9996;&#x9875;&#x5165;&#x53E3;&#x6709;&#x793C;</h2>
+          <p id="sidebarRewardCopy" class="modal-copy"></p>
+          <div class="sidebar-reward-steps">
+            <span>1. &#x70B9;&#x51FB;&#x4E0B;&#x65B9;&#x6309;&#x94AE;</span>
+            <span>2. &#x524D;&#x5F80;&#x6296;&#x97F3;&#x9996;&#x9875;&#x4FA7;&#x8FB9;&#x680F;</span>
+            <span>3. &#x4ECE;&#x4FA7;&#x8FB9;&#x680F;&#x56DE;&#x5230;&#x6E38;&#x620F;&#x9886;&#x53D6;&#x5956;&#x52B1;</span>
+          </div>
+          <div class="modal-actions">
+            <button id="sidebarRewardActionButton" class="primary-button" type="button"></button>
+            <button id="sidebarRewardCloseButton" class="secondary-button" type="button">&#x7A0D;&#x540E;&#x518D;&#x9886;</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="dragGhost" class="drag-ghost" aria-hidden="true"></div>
+    </div>
+    <script src="./platform-runtime.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
