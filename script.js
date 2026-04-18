@@ -4052,6 +4052,10 @@ function syncScreenVisibility() {
   if (gameScreenEl) {
     gameScreenEl.classList.toggle("game-screen-hidden", isHome);
   }
+  if (appShellEl) {
+    appShellEl.classList.toggle("home-mode", isHome);
+    appShellEl.classList.toggle("play-mode", !isHome);
+  }
 }
 
 function getElapsedMs() {
