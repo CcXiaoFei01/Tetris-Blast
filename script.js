@@ -137,8 +137,12 @@ const ENDLESS_HAMMER_REWARD_SCORE = 1800;
 const ENDLESS_UNDO_REWARD_SCORE = 2600;
 
 const boardEl = document.getElementById("board");
+const appShellEl = document.querySelector(".app-shell");
 const gameScreenEl = document.getElementById("gameScreen");
 const startScreenEl = document.getElementById("startScreen");
+const topBarEl = document.querySelector(".top-bar");
+const statusStripEl = document.querySelector(".status-strip");
+const trayPanelEl = document.querySelector(".tray-panel");
 const pauseButton = document.getElementById("pauseButton");
 const undoButton = document.getElementById("undoButton");
 const hammerButton = document.getElementById("hammerButton");
@@ -213,6 +217,7 @@ let audioContext = null;
 let audioMasterGain = null;
 let lastPickupSoundAt = 0;
 let activeTouchId = null;
+let responsiveLayoutFrame = 0;
 
 const state = {
   mode: "level",
@@ -760,6 +765,12 @@ function bindEvents() {
   }
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("pagehide", persistSession);
+  window.addEventListener("resize", scheduleResponsiveLayout);
+  window.addEventListener("orientationchange", scheduleResponsiveLayout);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleResponsiveLayout);
+    window.visualViewport.addEventListener("scroll", scheduleResponsiveLayout);
+  }
   pauseButton.addEventListener("click", openPauseMenu);
   undoButton.addEventListener("click", useUndo);
   hammerButton.addEventListener("click", toggleHammerMode);
@@ -3497,6 +3508,74 @@ function render() {
   renderTray();
   renderHud();
   renderMessage();
+  scheduleResponsiveLayout();
+}
+
+function scheduleResponsiveLayout() {
+  if (responsiveLayoutFrame) {
+    return;
+  }
+  responsiveLayoutFrame = window.requestAnimationFrame(() => {
+    responsiveLayoutFrame = 0;
+    applyResponsiveLayout();
+  });
+}
+
+function applyResponsiveLayout() {
+  if (!appShellEl || !gameScreenEl || !boardPanelEl || !topBarEl || !statusStripEl || !trayPanelEl) {
+    return;
+  }
+
+  const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || 0);
+  const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
+  const isMobileViewport = viewportWidth > 0 && viewportWidth <= 540;
+
+  if (!isMobileViewport) {
+    document.documentElement.style.removeProperty("--board-cell");
+    document.documentElement.style.removeProperty("--slot-cell-size");
+    appShellEl.style.removeProperty("height");
+    appShellEl.style.removeProperty("min-height");
+    gameScreenEl.style.removeProperty("height");
+    gameScreenEl.style.removeProperty("max-height");
+    gameScreenEl.style.removeProperty("width");
+    return;
+  }
+
+  const shellStyles = window.getComputedStyle(appShellEl);
+  const screenStyles = window.getComputedStyle(gameScreenEl);
+  const panelStyles = window.getComputedStyle(boardPanelEl);
+  const boardStyles = window.getComputedStyle(boardEl);
+  const rootStyle = document.documentElement.style;
+  const parsePx = (value) => Number.parseFloat(value || "0") || 0;
+
+  const shellPadX = parsePx(shellStyles.paddingLeft) + parsePx(shellStyles.paddingRight);
+  const shellPadY = parsePx(shellStyles.paddingTop) + parsePx(shellStyles.paddingBottom);
+  const screenGap = parsePx(screenStyles.rowGap || screenStyles.gap);
+  const panelPadX = parsePx(panelStyles.paddingLeft) + parsePx(panelStyles.paddingRight);
+  const panelPadY = parsePx(panelStyles.paddingTop) + parsePx(panelStyles.paddingBottom);
+  const boardPadX = parsePx(boardStyles.paddingLeft) + parsePx(boardStyles.paddingRight);
+  const boardPadY = parsePx(boardStyles.paddingTop) + parsePx(boardStyles.paddingBottom);
+  const boardGap = parsePx(boardStyles.columnGap || boardStyles.gap || "3");
+
+  const availableWidth = Math.max(280, Math.min(460, viewportWidth - shellPadX));
+  const availableHeight = Math.max(420, viewportHeight - shellPadY);
+
+  appShellEl.style.height = `${viewportHeight}px`;
+  appShellEl.style.minHeight = `${viewportHeight}px`;
+  gameScreenEl.style.width = `${availableWidth}px`;
+  gameScreenEl.style.height = `${availableHeight}px`;
+  gameScreenEl.style.maxHeight = `${availableHeight}px`;
+
+  const fixedHeight = topBarEl.offsetHeight + statusStripEl.offsetHeight + trayPanelEl.offsetHeight + screenGap * 4;
+  const availableBoardHeight = Math.max(180, availableHeight - fixedHeight - panelPadY - boardPadY);
+  const availableBoardWidth = Math.max(180, availableWidth - panelPadX - boardPadX);
+  const boardPixelsFromWidth = (availableBoardWidth - boardGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const boardPixelsFromHeight = (availableBoardHeight - boardGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const cellSize = Math.max(22, Math.floor(Math.min(boardPixelsFromWidth, boardPixelsFromHeight)));
+  const slotCellSize = Math.max(14, Math.min(22, Math.round(cellSize * 0.68)));
+
+  rootStyle.setProperty("--board-cell", `${cellSize}px`);
+  rootStyle.setProperty("--slot-cell-size", `${slotCellSize}px`);
 }
 
 function renderBoard() {
