@@ -113,27 +113,8 @@
 
         <section class="board-panel">
           <div id="board" class="board" aria-label="10 x 10 &#x68CB;&#x76D8;"></div>
-          <div id="boardMessage" class="board-message"></div>
-        </section>
-
-        <section class="status-strip">
-          <div class="stats-cluster">
-            <div class="mini-stat">
-              <span class="mini-label">&#x884C;&#x6D88;&#x9664;</span>
-              <strong id="rowsClearedValue">0</strong>
-            </div>
-            <div class="mini-stat">
-              <span class="mini-label">&#x5217;&#x6D88;&#x9664;</span>
-              <strong id="colsClearedValue">0</strong>
-            </div>
-            <div class="mini-stat">
-              <span class="mini-label">&#x6700;&#x9AD8;&#x8FDE;&#x51FB;</span>
-              <strong id="maxComboValue">0</strong>
-            </div>
-          </div>
-
-          <div class="tool-cluster">
-            <button id="undoButton" class="tool-button" type="button">
+          <div class="board-panel-tools">
+            <button id="undoButton" class="tool-button tool-button-compact" type="button">
               <span class="tool-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M9 7H4v5"></path>
@@ -144,7 +125,7 @@
               <strong id="undoCountValue">1</strong>
             </button>
 
-            <button id="hammerButton" class="tool-button" type="button">
+            <button id="hammerButton" class="tool-button tool-button-compact" type="button">
               <span class="tool-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M14 4 20 10"></path>
@@ -158,6 +139,7 @@
               <strong id="hammerCountValue">1</strong>
             </button>
           </div>
+          <div id="boardMessage" class="board-message"></div>
         </section>
 
         <section class="tray-panel" aria-label="&#x65B9;&#x5757;&#x69FD;&#x4F4D;">
