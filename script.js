@@ -455,28 +455,15 @@ function renderSidebarEntry() {
   if (!sidebarEntryButton) {
     return;
   }
-  const claimable = state.sidebarSupported && state.sidebarRewardEligible && !isSidebarRewardClaimedToday();
-  sidebarEntryButton.hidden = !state.sidebarSupported;
-  sidebarEntryButton.classList.toggle("claimable", claimable);
-  if (sidebarEntryLabelEl) {
-    sidebarEntryLabelEl.textContent = claimable ? "立即领奖" : "限定礼包";
-  }
-  if (!sidebarRewardOverlayEl || !sidebarRewardOverlayEl.classList.contains("active")) {
-    return;
-  }
-  sidebarRewardTitleEl.textContent = claimable ? "今日奖励可领取" : "首页侧边栏有礼";
-  sidebarRewardCopyEl.textContent = claimable
-    ? "返回游戏成功，立即领取今日奖励：锤子 +1，撤销 +1。"
-    : "前往抖音首页侧边栏，再从侧边栏返回游戏，可领取今日奖励。";
-  sidebarRewardActionButton.textContent = claimable ? "立即领奖" : "前往侧边栏";
+  sidebarEntryButton.hidden = true;
+  sidebarEntryButton.classList.remove("claimable");
 }
 
 function openSidebarRewardOverlay() {
-  if (!state.sidebarSupported) {
+  if (!state.sidebarSupported || !sidebarRewardOverlayEl) {
     return;
   }
-  sidebarRewardOverlayEl.classList.add("active");
-  renderSidebarEntry();
+  sidebarRewardOverlayEl.classList.remove("active");
 }
 
 function closeSidebarRewardOverlay() {

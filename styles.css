@@ -147,6 +147,7 @@ button:focus-visible {
 }
 
 .sidebar-entry {
+  display: none !important;
   position: fixed;
   right: max(14px, calc(14px + env(safe-area-inset-right)));
   bottom: max(18px, calc(18px + env(safe-area-inset-bottom)));
@@ -1006,6 +1007,7 @@ button:focus-visible {
 }
 
 .sidebar-reward-card {
+  display: none;
   text-align: left;
 }
 
@@ -1104,7 +1106,9 @@ button:focus-visible {
 
 @media (max-width: 540px) {
   :root {
-    --board-cell: min(7.55vw, 34px);
+    --board-cell: min(7.05vw, 31px);
+    --board-gap: 3px;
+    --cell-radius: 6px;
   }
 
   body {
@@ -1114,26 +1118,95 @@ button:focus-visible {
   .app-shell {
     min-height: 100svh;
     align-items: start;
+    padding-top: calc(12px + env(safe-area-inset-top) + var(--platform-top-inset, 0px));
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
+  .game-screen {
+    gap: 12px;
+  }
+
   .top-bar {
-    grid-template-columns: 52px 1fr;
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .icon-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .icon-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .score-card,
+  .session-card {
+    border-radius: 16px;
+  }
+
+  .score-card {
+    padding: 8px 12px;
+  }
+
+  .score-label {
+    font-size: 10px;
+  }
+
+  .score-value {
+    font-size: clamp(22px, 8.8vw, 34px);
+  }
+
+  .score-meta {
+    margin-top: 6px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .combo-badge,
+  .best-pill {
+    padding: 3px 8px;
+    font-size: 11px;
   }
 
   .session-card {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(2, auto);
+    grid-template-columns: repeat(3, minmax(0, auto));
     justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .session-pill {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .board-panel {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .board-message {
+    min-height: 18px;
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.45;
   }
 
   .status-strip {
     flex-direction: column;
+    gap: 10px;
   }
 
   .stats-cluster,
   .tool-cluster {
     justify-content: space-between;
+    gap: 8px;
   }
 
   .mini-stat,
@@ -1142,19 +1215,58 @@ button:focus-visible {
     flex: 1;
   }
 
+  .mini-stat {
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .mini-stat strong {
+    margin-top: 3px;
+    font-size: 18px;
+  }
+
+  .tool-button {
+    grid-template-columns: 20px 1fr auto;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .tool-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .tray-slot {
-    min-height: 102px;
+    min-height: 92px;
+    padding: 10px;
+    border-radius: 18px;
   }
 
   .tray-panel {
-    margin-top: -10px;
+    gap: 10px;
+    margin-top: -2px;
+  }
+
+  .slot-cell {
+    width: clamp(16px, 4.5vw, 22px);
+    height: clamp(16px, 4.5vw, 22px);
   }
 
   .sidebar-entry {
     right: max(12px, calc(12px + env(safe-area-inset-right)));
-    bottom: max(12px, calc(12px + env(safe-area-inset-bottom)));
-    min-width: 108px;
-    padding: 11px 12px;
+    bottom: max(98px, calc(98px + env(safe-area-inset-bottom)));
+    min-width: 92px;
+    padding: 10px 11px;
+    border-radius: 16px;
+  }
+
+  .sidebar-entry strong {
+    font-size: 13px;
+  }
+
+  .sidebar-entry-badge {
+    font-size: 10px;
   }
 
   .modal-actions {
