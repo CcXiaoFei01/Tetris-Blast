@@ -5181,14 +5181,29 @@ function refreshResumeState() {
 
 // FINAL_UI_TEXT_OVERRIDE_CLEAN
 function renderHud() {
-  rowsClearedValueEl.textContent = String(state.totalRowsCleared);
-  colsClearedValueEl.textContent = String(state.totalColsCleared);
-  maxComboValueEl.textContent = String(state.maxCombo);
-  undoCountValueEl.textContent = String(state.undoCount);
-  hammerCountValueEl.textContent = String(state.hammerCount);
-  comboBadgeEl.textContent = "\u8fde\u51fb " + state.comboStreak;
-  bestScoreValueEl.textContent = String(getModeBestScore());
-  phaseValueEl.textContent =
+  if (rowsClearedValueEl) {
+    rowsClearedValueEl.textContent = String(state.totalRowsCleared);
+  }
+  if (colsClearedValueEl) {
+    colsClearedValueEl.textContent = String(state.totalColsCleared);
+  }
+  if (maxComboValueEl) {
+    maxComboValueEl.textContent = String(state.maxCombo);
+  }
+  if (undoCountValueEl) {
+    undoCountValueEl.textContent = String(state.undoCount);
+  }
+  if (hammerCountValueEl) {
+    hammerCountValueEl.textContent = String(state.hammerCount);
+  }
+  if (comboBadgeEl) {
+    comboBadgeEl.textContent = "\u8fde\u51fb " + state.comboStreak;
+  }
+  if (bestScoreValueEl) {
+    bestScoreValueEl.textContent = String(getModeBestScore());
+  }
+  if (phaseValueEl) {
+    phaseValueEl.textContent =
     state.status === "home"
       ? state.mode === "endless"
         ? "\u65e0\u5c3d\u6a21\u5f0f"
@@ -5196,12 +5211,15 @@ function renderHud() {
       : state.mode === "endless"
         ? "\u65e0\u5c3d\u6ce2\u6b21 " + state.endlessWave
         : "\u7b2c " + state.currentLevel + " / " + TOTAL_LEVELS + " \u5173";
-  targetValueEl.textContent =
+  }
+  if (targetValueEl) {
+    targetValueEl.textContent =
     state.status === "home"
       ? "\u76ee\u6807 0/0"
       : state.mode === "endless"
         ? "\u9ed1\u5757 " + state.targetsRemaining
         : "\u76ee\u6807 " + state.targetsRemaining + "/" + state.targetsTotal;
+  }
   pauseButton.disabled = state.status !== "playing" || state.isResolving;
   undoButton.disabled = !(state.status === "playing" && !state.isResolving && state.undoCount > 0 && state.undoSnapshot);
   hammerButton.disabled = !(state.status === "playing" && !state.isResolving && state.hammerCount > 0);
