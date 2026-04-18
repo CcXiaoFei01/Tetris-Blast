@@ -119,6 +119,7 @@ button:focus-visible {
   position: absolute;
   inset: auto;
   transform: translateY(18px) scale(0.985);
+  display: none !important;
 }
 
 .start-screen {
@@ -1209,10 +1210,14 @@ button:focus-visible {
     margin: 0 auto;
     align-self: start;
     min-height: calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px - var(--platform-top-inset, 0px));
-    display: flex;
+    display: none;
     align-items: stretch;
     overflow: hidden;
     padding-bottom: 0;
+  }
+
+  .start-screen.active {
+    display: flex;
   }
 
   .start-card {
