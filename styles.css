@@ -2,6 +2,7 @@
   --wood-light: #c08a4d;
   --wood-mid: #9c6537;
   --wood-dark: #7b4d28;
+  --board-size: 426px;
   --board-gap: 4px;
   --board-cell: min(6.4vw, 39px);
   --slot-cell-size: clamp(18px, 5vw, 26px);
@@ -1141,6 +1142,7 @@ button:focus-visible {
     gap: 10px;
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;
     align-content: stretch;
+    justify-items: stretch;
   }
 
   .top-bar {
@@ -1207,9 +1209,32 @@ button:focus-visible {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
     padding: 10px;
     border-radius: 20px;
+  }
+
+  .board {
+    width: min(100%, var(--board-size));
+    aspect-ratio: 1 / 1;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    justify-content: stretch;
+    padding: 4px;
+    gap: 3px;
+  }
+
+  .cell {
+    width: auto;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 7px;
+    background:
+      linear-gradient(180deg, rgba(149, 96, 55, 0.98), rgba(93, 53, 28, 0.98));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 231, 185, 0.16),
+      inset 0 -2px 0 rgba(28, 14, 8, 0.24);
   }
 
   .board-message {

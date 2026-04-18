@@ -3531,6 +3531,7 @@ function applyResponsiveLayout() {
   const isMobileViewport = viewportWidth > 0 && viewportWidth <= 540;
 
   if (!isMobileViewport) {
+    document.documentElement.style.removeProperty("--board-size");
     document.documentElement.style.removeProperty("--board-cell");
     document.documentElement.style.removeProperty("--slot-cell-size");
     appShellEl.style.removeProperty("height");
@@ -3555,7 +3556,6 @@ function applyResponsiveLayout() {
   const panelPadY = parsePx(panelStyles.paddingTop) + parsePx(panelStyles.paddingBottom);
   const boardPadX = parsePx(boardStyles.paddingLeft) + parsePx(boardStyles.paddingRight);
   const boardPadY = parsePx(boardStyles.paddingTop) + parsePx(boardStyles.paddingBottom);
-  const boardGap = parsePx(boardStyles.columnGap || boardStyles.gap || "3");
 
   const availableWidth = Math.max(280, Math.min(460, viewportWidth - shellPadX));
   const availableHeight = Math.max(420, viewportHeight - shellPadY);
@@ -3567,13 +3567,13 @@ function applyResponsiveLayout() {
   gameScreenEl.style.maxHeight = `${availableHeight}px`;
 
   const fixedHeight = topBarEl.offsetHeight + statusStripEl.offsetHeight + trayPanelEl.offsetHeight + screenGap * 4;
-  const availableBoardHeight = Math.max(180, availableHeight - fixedHeight - panelPadY - boardPadY);
-  const availableBoardWidth = Math.max(180, availableWidth - panelPadX - boardPadX);
-  const boardPixelsFromWidth = (availableBoardWidth - boardGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const boardPixelsFromHeight = (availableBoardHeight - boardGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const cellSize = Math.max(22, Math.floor(Math.min(boardPixelsFromWidth, boardPixelsFromHeight)));
-  const slotCellSize = Math.max(14, Math.min(22, Math.round(cellSize * 0.68)));
+  const maxBoardWidth = Math.max(220, availableWidth - panelPadX - boardPadX);
+  const maxBoardHeight = Math.max(220, availableHeight - fixedHeight - panelPadY - boardPadY);
+  const boardSize = Math.max(220, Math.floor(Math.min(maxBoardWidth, maxBoardHeight)));
+  const cellSize = Math.max(20, Math.floor((boardSize - 27) / BOARD_SIZE));
+  const slotCellSize = Math.max(14, Math.min(22, Math.round(cellSize * 0.72)));
 
+  rootStyle.setProperty("--board-size", `${boardSize}px`);
   rootStyle.setProperty("--board-cell", `${cellSize}px`);
   rootStyle.setProperty("--slot-cell-size", `${slotCellSize}px`);
 }
