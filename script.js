@@ -4023,7 +4023,6 @@ function syncScreenVisibility() {
   const isHome = state.status === "home";
   if (startScreenEl) {
     startScreenEl.classList.toggle("active", isHome);
-    startScreenEl.scrollTop = 0;
   }
   if (gameScreenEl) {
     gameScreenEl.classList.toggle("game-screen-hidden", isHome);
@@ -4031,10 +4030,6 @@ function syncScreenVisibility() {
   if (appShellEl) {
     appShellEl.classList.toggle("home-mode", isHome);
     appShellEl.classList.toggle("play-mode", !isHome);
-    appShellEl.scrollTop = 0;
-  }
-  if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
-    window.scrollTo(0, 0);
   }
 }
 

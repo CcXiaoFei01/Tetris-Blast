@@ -52,6 +52,7 @@ body {
 html {
   height: 100%;
   overscroll-behavior: none;
+  overflow-anchor: none;
 }
 
 body {
@@ -132,11 +133,11 @@ button:focus-visible {
 }
 
 .app-shell.home-mode {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .app-shell.play-mode {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .start-card {
@@ -1138,7 +1139,7 @@ button:focus-visible {
   }
 
   .app-shell {
-    place-items: start center;
+    display: block;
     min-height: auto;
     overflow: visible;
     padding-top: calc(10px + env(safe-area-inset-top) + var(--platform-top-inset, 0px));
@@ -1149,6 +1150,7 @@ button:focus-visible {
 
   .game-screen {
     width: min(100%, 420px);
+    margin: 0 auto;
     gap: 10px;
     align-content: start;
     justify-items: stretch;
@@ -1156,6 +1158,7 @@ button:focus-visible {
 
   .start-screen {
     width: min(100%, 420px);
+    margin: 0 auto;
     align-self: start;
     max-height: none;
     overflow: visible;
