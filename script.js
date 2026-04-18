@@ -5213,6 +5213,7 @@ function renderHud() {
         : "\u7b2c " + state.currentLevel + " / " + TOTAL_LEVELS + " \u5173";
   }
   if (targetValueEl) {
+    targetValueEl.hidden = true;
     targetValueEl.textContent =
     state.status === "home"
       ? "\u76ee\u6807 0/0"
