@@ -333,6 +333,14 @@ button:focus-visible {
   display: grid;
   grid-template-columns: repeat(10, var(--board-cell));
   gap: var(--board-gap);
+  width: max-content;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(69, 39, 18, 0.32), rgba(34, 18, 8, 0.28));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 202, 0.08),
+    inset 0 0 0 1px rgba(255, 229, 185, 0.04);
   justify-content: center;
   contain: layout paint;
   touch-action: pan-y;
@@ -356,10 +364,10 @@ button:focus-visible {
   border-radius: var(--cell-radius);
   appearance: none;
   background:
-    linear-gradient(180deg, rgba(112, 70, 35, 0.98), rgba(77, 43, 20, 0.98));
+    linear-gradient(180deg, rgba(128, 79, 42, 0.98), rgba(81, 46, 23, 0.98));
   box-shadow:
-    inset 0 1px 0 rgba(255, 227, 177, 0.08),
-    inset 0 -1px 0 rgba(20, 10, 6, 0.26);
+    inset 0 1px 0 rgba(255, 227, 177, 0.12),
+    inset 0 -1px 0 rgba(20, 10, 6, 0.3);
   cursor: pointer;
   touch-action: pan-y;
 }
@@ -1200,21 +1208,26 @@ button:focus-visible {
   }
 
   .board-message {
-    min-height: 18px;
-    margin-top: 8px;
-    font-size: 12px;
-    line-height: 1.45;
+    display: none;
   }
 
   .status-strip {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
   .stats-cluster,
   .tool-cluster {
-    display: contents;
+    display: grid;
+    gap: 8px;
+  }
+
+  .stats-cluster {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tool-cluster {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .mini-stat,
@@ -1233,12 +1246,13 @@ button:focus-visible {
   }
 
   .tool-button {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 4px;
-    padding: 8px 6px;
+    grid-template-columns: 20px 1fr auto;
+    align-items: center;
+    justify-items: stretch;
+    gap: 8px;
+    padding: 9px 10px;
     border-radius: 16px;
-    text-align: center;
+    text-align: left;
   }
 
   .tool-icon svg {
@@ -1383,10 +1397,7 @@ button:focus-visible {
   }
 
   .board-message {
-    min-height: 0;
-    margin-top: 6px;
-    font-size: 11px;
-    line-height: 1.35;
+    display: none;
   }
 
   .status-strip {
@@ -1408,8 +1419,9 @@ button:focus-visible {
   }
 
   .tool-button {
-    gap: 3px;
-    padding: 7px 4px;
+    grid-template-columns: 18px 1fr auto;
+    gap: 6px;
+    padding: 8px 9px;
     border-radius: 14px;
     font-size: 12px;
   }
@@ -1484,8 +1496,7 @@ button:focus-visible {
   }
 
   .board-message {
-    margin-top: 4px;
-    font-size: 10px;
+    display: none;
   }
 
   .status-strip {
@@ -1502,8 +1513,9 @@ button:focus-visible {
   }
 
   .tool-button {
-    gap: 2px;
-    padding: 6px 4px;
+    grid-template-columns: 16px 1fr auto;
+    gap: 5px;
+    padding: 7px 8px;
     border-radius: 12px;
     font-size: 11px;
   }
