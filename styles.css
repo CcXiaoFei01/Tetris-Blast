@@ -1145,6 +1145,123 @@ button:focus-visible {
     justify-items: stretch;
   }
 
+  .start-screen {
+    width: min(100%, 440px);
+    align-self: start;
+  }
+
+  .start-card {
+    min-height: calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px - var(--platform-top-inset, 0px));
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 20px 18px 18px;
+    border-radius: 24px;
+  }
+
+  .start-card .eyebrow {
+    margin-bottom: 0;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+  }
+
+  .start-card h1 {
+    width: min(100%, 6.4em);
+    margin: 0 auto;
+    gap: 5px;
+  }
+
+  .home-subtitle {
+    margin-bottom: 6px;
+    max-width: none;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .intro-stats {
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .intro-stat {
+    padding: 10px 10px 12px;
+    border-radius: 16px;
+  }
+
+  .intro-stat span {
+    font-size: 11px;
+  }
+
+  .intro-stat strong {
+    margin-top: 5px;
+    font-size: 24px;
+  }
+
+  .mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .mode-card {
+    padding: 12px 10px;
+    border-radius: 18px;
+  }
+
+  .mode-card .eyebrow {
+    margin-bottom: 2px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+  }
+
+  .mode-card h3 {
+    margin: 2px 0 6px;
+    font-size: 17px;
+    line-height: 1.15;
+  }
+
+  .mode-copy {
+    display: none;
+  }
+
+  .mode-meta {
+    display: grid;
+    gap: 2px;
+    justify-items: start;
+    margin-bottom: 10px;
+  }
+
+  .mode-meta span {
+    font-size: 11px;
+  }
+
+  .mode-meta strong {
+    font-size: 22px;
+  }
+
+  .mode-button {
+    min-height: 42px;
+    padding: 10px 8px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+
+  .modal-actions {
+    margin-top: 2px;
+    gap: 10px;
+  }
+
+  .modal-actions .secondary-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .runtime-note {
+    margin-top: 0;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
   .top-bar {
     grid-template-columns: 44px 1fr;
     gap: 10px;
@@ -1317,33 +1434,11 @@ button:focus-visible {
     font-size: 10px;
   }
 
-  .modal-actions {
-    flex-direction: column;
-  }
-
-  .intro-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mode-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .start-card h1 {
-    width: min(100%, 7em);
-    gap: 6px;
-  }
-
   .start-card .title-kicker {
     font-size: clamp(13px, 3.8vw, 18px);
   }
 
   .start-card .title-main {
     font-size: clamp(25px, 7vw, 36px);
-  }
-
-  .home-subtitle {
-    max-width: 18ch;
-    font-size: 14px;
   }
 }
