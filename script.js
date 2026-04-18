@@ -2973,14 +2973,17 @@ function updatePreviewFromPoint(clientX, clientY, slotIndex) {
   updatePreview(boardCell.row - anchorRow, boardCell.col - anchorCol, slotIndex, piece);
 }
 
-function updatePreview(row, col, slotIndex, piece) {
-  const valid = canPlacePiece(state.board, piece, row, col);
+function updatePreview(row, col, slotIndex, piece, knownValid) {
+  const valid = typeof knownValid === "boolean" ? knownValid : canPlacePiece(state.board, piece, row, col);
   const previousPreview = state.preview;
   if (previousPreview && previousPreview.row === row && previousPreview.col === col && previousPreview.valid === valid && previousPreview.slotIndex === slotIndex) {
     dragGhostEl.classList.toggle("invalid", !valid);
     return;
   }
   state.preview = { row, col, valid, slotIndex };
+  if (valid && state.dragging && state.dragging.slotIndex === slotIndex) {
+    state.dragging.lastValidPreview = { row, col, valid: true, slotIndex };
+  }
   syncPreviewCells(previousPreview, state.preview, piece);
   dragGhostEl.classList.toggle("invalid", !valid);
   if (!previousPreview || previousPreview.valid !== valid) {
@@ -3752,6 +3755,9 @@ const DRAG_PREVIEW_LEASH_LEFT_RATIO = 0.24;
 const DRAG_PREVIEW_LEASH_RIGHT_RATIO = 0.58;
 const DRAG_PREVIEW_LEASH_Y_RATIO = 0.28;
 const DRAG_PREVIEW_LOCK_RATIO = 0.38;
+const DRAG_PREVIEW_SWITCH_RATIO = 0.54;
+const DRAG_PREVIEW_RETAIN_RATIO = 0.92;
+const DRAG_PREVIEW_SAMPLE_RATIO = 0.16;
 let dragGhostFrame = 0;
 
 function beginDrag(slotIndex, pointerId, clientX, clientY) {
@@ -3766,6 +3772,9 @@ function beginDrag(slotIndex, pointerId, clientX, clientY) {
     pointerY: clientY,
     appliedX: Number.NaN,
     appliedY: Number.NaN,
+    previewSampleX: Number.NaN,
+    previewSampleY: Number.NaN,
+    lastValidPreview: null,
     ...getDragAnchorMetrics(slotIndex, piece, clientX, clientY),
   };
   state.selectedSlot = slotIndex;
@@ -3858,12 +3867,23 @@ function updateDragPosition(clientX, clientY) {
 
 function updatePreviewFromPoint(clientX, clientY, slotIndex) {
   const piece = state.slots[slotIndex];
-  if (!piece || !state.dragging || state.dragging.slotIndex !== slotIndex) {
+  const dragging = state.dragging;
+  if (!piece || !dragging || dragging.slotIndex !== slotIndex) {
     return;
   }
 
-  const placement = getBoardPlacementFromGhost(clientX, clientY, piece, state.dragging);
+  if (shouldDeferPreviewUpdate(clientX, clientY, dragging)) {
+    return;
+  }
+
+  const boardMetrics = dragging.boardMetrics || getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
+  const placement = getBoardPlacementFromGhost(clientX, clientY, piece, dragging, boardMetrics);
+  const retainedPlacement = getRetainedValidPreviewPlacement(clientX, clientY, dragging, boardMetrics);
   if (!placement) {
+    if (retainedPlacement) {
+      updatePreview(retainedPlacement.row, retainedPlacement.col, slotIndex, piece, true);
+      return;
+    }
     if (state.preview) {
       const previousPreview = state.preview;
       state.preview = null;
@@ -3876,7 +3896,13 @@ function updatePreviewFromPoint(clientX, clientY, slotIndex) {
     return;
   }
 
-  updatePreview(placement.row, placement.col, slotIndex, piece);
+  const valid = canPlacePiece(state.board, piece, placement.row, placement.col);
+  if (!valid && retainedPlacement) {
+    updatePreview(retainedPlacement.row, retainedPlacement.col, slotIndex, piece, true);
+    return;
+  }
+
+  updatePreview(placement.row, placement.col, slotIndex, piece, valid);
 }
 
 function renderDragGhost(piece) {
@@ -3958,8 +3984,7 @@ function getDragAnchorMetrics(slotIndex, piece, clientX, clientY) {
   };
 }
 
-function getBoardPlacementFromGhost(clientX, clientY, piece, dragging) {
-  const boardMetrics = dragging.boardMetrics || getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
+function getBoardPlacementFromGhost(clientX, clientY, piece, dragging, boardMetrics = dragging.boardMetrics || getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE)) {
   const lockedPlacement = getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics);
   if (lockedPlacement) {
     return lockedPlacement;
@@ -3978,11 +4003,28 @@ function getBoardPlacementFromGhost(clientX, clientY, piece, dragging) {
   const localY = clamp(clientY - boardMetrics.rect.top, 0, Math.max(boardMetrics.rect.height - 1, 0));
   const anchorBoardRow = clamp(Math.floor((localY + boardMetrics.gapY / 2) / boardMetrics.pitchY), 0, BOARD_SIZE - 1);
   const anchorBoardCol = clamp(Math.floor((localX + boardMetrics.gapX / 2) / boardMetrics.pitchX), 0, BOARD_SIZE - 1);
-
-  return {
+  const candidatePlacement = {
     row: anchorBoardRow - (dragging.anchorRow || 0),
     col: anchorBoardCol - (dragging.anchorCol || 0),
   };
+  const preview = state.preview;
+  if (
+    preview &&
+    preview.slotIndex === dragging.slotIndex &&
+    (preview.row !== candidatePlacement.row || preview.col !== candidatePlacement.col)
+  ) {
+    const previewAnchorCenter = getPreviewAnchorCenter(preview, dragging, boardMetrics);
+    const switchX = Math.max(boardMetrics.cellWidth * DRAG_PREVIEW_SWITCH_RATIO, 12);
+    const switchY = Math.max(boardMetrics.cellHeight * DRAG_PREVIEW_SWITCH_RATIO, 12);
+    if (
+      Math.abs(clientX - previewAnchorCenter.x) <= switchX &&
+      Math.abs(clientY - previewAnchorCenter.y) <= switchY
+    ) {
+      return { row: preview.row, col: preview.col };
+    }
+  }
+
+  return candidatePlacement;
 }
 
 function getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
@@ -4000,6 +4042,64 @@ function getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
 
   if (Math.abs(clientX - anchorCenterX) <= lockX && Math.abs(clientY - anchorCenterY) <= lockY) {
     return { row: preview.row, col: preview.col };
+  }
+
+  return null;
+}
+
+function shouldDeferPreviewUpdate(clientX, clientY, dragging) {
+  const boardMetrics = dragging.boardMetrics;
+  if (!boardMetrics) {
+    dragging.previewSampleX = clientX;
+    dragging.previewSampleY = clientY;
+    return false;
+  }
+
+  const threshold = Math.max(
+    Math.min(boardMetrics.cellWidth, boardMetrics.cellHeight) * DRAG_PREVIEW_SAMPLE_RATIO,
+    3
+  );
+  if (
+    Number.isFinite(dragging.previewSampleX) &&
+    Number.isFinite(dragging.previewSampleY) &&
+    Math.abs(clientX - dragging.previewSampleX) < threshold &&
+    Math.abs(clientY - dragging.previewSampleY) < threshold
+  ) {
+    return true;
+  }
+
+  dragging.previewSampleX = clientX;
+  dragging.previewSampleY = clientY;
+  return false;
+}
+
+function getPreviewAnchorCenter(preview, dragging, boardMetrics) {
+  const anchorRow = preview.row + (dragging.anchorRow || 0);
+  const anchorCol = preview.col + (dragging.anchorCol || 0);
+  return {
+    x: boardMetrics.rect.left + anchorCol * boardMetrics.pitchX + boardMetrics.cellWidth / 2,
+    y: boardMetrics.rect.top + anchorRow * boardMetrics.pitchY + boardMetrics.cellHeight / 2,
+  };
+}
+
+function getRetainedValidPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
+  const retainedPreview =
+    dragging.lastValidPreview && dragging.lastValidPreview.slotIndex === dragging.slotIndex
+      ? dragging.lastValidPreview
+      : state.preview && state.preview.valid && state.preview.slotIndex === dragging.slotIndex
+        ? state.preview
+        : null;
+
+  if (!retainedPreview) {
+    return null;
+  }
+
+  const previewAnchorCenter = getPreviewAnchorCenter(retainedPreview, dragging, boardMetrics);
+  const retainX = Math.max(boardMetrics.cellWidth * DRAG_PREVIEW_RETAIN_RATIO, 18);
+  const retainY = Math.max(boardMetrics.cellHeight * DRAG_PREVIEW_RETAIN_RATIO, 18);
+
+  if (Math.abs(clientX - previewAnchorCenter.x) <= retainX && Math.abs(clientY - previewAnchorCenter.y) <= retainY) {
+    return { row: retainedPreview.row, col: retainedPreview.col };
   }
 
   return null;
