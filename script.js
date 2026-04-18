@@ -3522,18 +3522,18 @@ function scheduleResponsiveLayout() {
 }
 
 function applyResponsiveLayout() {
-  if (!appShellEl || !gameScreenEl || !boardPanelEl || !topBarEl || !statusStripEl || !trayPanelEl) {
+  if (!appShellEl || !gameScreenEl) {
     return;
   }
 
   const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || 0);
-  const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
   const isMobileViewport = viewportWidth > 0 && viewportWidth <= 540;
+  const rootStyle = document.documentElement.style;
 
   if (!isMobileViewport) {
-    document.documentElement.style.removeProperty("--board-size");
-    document.documentElement.style.removeProperty("--board-cell");
-    document.documentElement.style.removeProperty("--slot-cell-size");
+    rootStyle.removeProperty("--board-size");
+    rootStyle.removeProperty("--board-cell");
+    rootStyle.removeProperty("--slot-cell-size");
     appShellEl.style.removeProperty("height");
     appShellEl.style.removeProperty("min-height");
     gameScreenEl.style.removeProperty("height");
@@ -3542,40 +3542,15 @@ function applyResponsiveLayout() {
     return;
   }
 
-  const shellStyles = window.getComputedStyle(appShellEl);
-  const screenStyles = window.getComputedStyle(gameScreenEl);
-  const panelStyles = window.getComputedStyle(boardPanelEl);
-  const boardStyles = window.getComputedStyle(boardEl);
-  const rootStyle = document.documentElement.style;
-  const parsePx = (value) => Number.parseFloat(value || "0") || 0;
+  appShellEl.style.removeProperty("height");
+  appShellEl.style.removeProperty("min-height");
+  gameScreenEl.style.removeProperty("height");
+  gameScreenEl.style.removeProperty("max-height");
+  gameScreenEl.style.removeProperty("width");
 
-  const shellPadX = parsePx(shellStyles.paddingLeft) + parsePx(shellStyles.paddingRight);
-  const shellPadY = parsePx(shellStyles.paddingTop) + parsePx(shellStyles.paddingBottom);
-  const screenGap = parsePx(screenStyles.rowGap || screenStyles.gap);
-  const panelPadX = parsePx(panelStyles.paddingLeft) + parsePx(panelStyles.paddingRight);
-  const panelPadY = parsePx(panelStyles.paddingTop) + parsePx(panelStyles.paddingBottom);
-  const boardPadX = parsePx(boardStyles.paddingLeft) + parsePx(boardStyles.paddingRight);
-  const boardPadY = parsePx(boardStyles.paddingTop) + parsePx(boardStyles.paddingBottom);
-
-  const availableWidth = Math.max(280, Math.min(460, viewportWidth - shellPadX));
-  const availableHeight = Math.max(420, viewportHeight - shellPadY);
-
-  appShellEl.style.height = `${viewportHeight}px`;
-  appShellEl.style.minHeight = `${viewportHeight}px`;
-  gameScreenEl.style.width = `${availableWidth}px`;
-  gameScreenEl.style.height = `${availableHeight}px`;
-  gameScreenEl.style.maxHeight = `${availableHeight}px`;
-
-  const fixedHeight = topBarEl.offsetHeight + statusStripEl.offsetHeight + trayPanelEl.offsetHeight + screenGap * 4;
-  const maxBoardWidth = Math.max(220, availableWidth - panelPadX - boardPadX);
-  const maxBoardHeight = Math.max(220, availableHeight - fixedHeight - panelPadY - boardPadY);
-  const boardSize = Math.max(220, Math.floor(Math.min(maxBoardWidth, maxBoardHeight)));
-  const cellSize = Math.max(20, Math.floor((boardSize - 27) / BOARD_SIZE));
-  const slotCellSize = Math.max(14, Math.min(22, Math.round(cellSize * 0.72)));
-
-  rootStyle.setProperty("--board-size", `${boardSize}px`);
-  rootStyle.setProperty("--board-cell", `${cellSize}px`);
-  rootStyle.setProperty("--slot-cell-size", `${slotCellSize}px`);
+  rootStyle.setProperty("--board-size", `${Math.max(280, Math.min(360, viewportWidth - 28))}px`);
+  rootStyle.removeProperty("--board-cell");
+  rootStyle.removeProperty("--slot-cell-size");
 }
 
 function renderBoard() {
@@ -4048,6 +4023,7 @@ function syncScreenVisibility() {
   const isHome = state.status === "home";
   if (startScreenEl) {
     startScreenEl.classList.toggle("active", isHome);
+    startScreenEl.scrollTop = 0;
   }
   if (gameScreenEl) {
     gameScreenEl.classList.toggle("game-screen-hidden", isHome);
@@ -4055,6 +4031,10 @@ function syncScreenVisibility() {
   if (appShellEl) {
     appShellEl.classList.toggle("home-mode", isHome);
     appShellEl.classList.toggle("play-mode", !isHome);
+    appShellEl.scrollTop = 0;
+  }
+  if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+    window.scrollTo(0, 0);
   }
 }
 
