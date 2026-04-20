@@ -43,10 +43,10 @@ const SPECIAL_SHAPE_IDS = new Set(["mini-single", "mini-domino-flat", "mini-domi
 const STANDARD_SHAPES = SHAPES.filter((shape) => !SPECIAL_SHAPE_IDS.has(shape.id));
 const SPECIAL_SHAPES = SHAPES.filter((shape) => SPECIAL_SHAPE_IDS.has(shape.id));
 const PIECE_ROLL_PROFILES = {
-  normal: { standard: 1, single: 0.4, domino: 0.7 },
-  warning: { standard: 0.9, single: 1.7, domino: 2.3 },
-  critical: { standard: 0.5, single: 3.2, domino: 4.4 },
-  emergency: { standard: 0.12, single: 4.8, domino: 6.2 },
+  normal: { standard: 1, single: 0.82, domino: 1.8 },
+  warning: { standard: 0.9, single: 2.55, domino: 4.2 },
+  critical: { standard: 0.5, single: 4.1, domino: 6.4 },
+  emergency: { standard: 0.12, single: 5.2, domino: 8.4 },
 };
 const SCORE_TABLE = { 0: 0, 1: 100, 2: 300, 3: 600 };
 const ENDLESS_STAGE_CONFIGS = [
@@ -3245,10 +3245,10 @@ function getPieceRollProfile() {
   const emptyCellCount = getEmptyCellCount(state.board);
   const standardFitCount = countFittableShapes(STANDARD_SHAPES, 6);
 
-  if (emptyCellCount <= 14 || standardFitCount <= 2) {
+  if (emptyCellCount <= 18 || standardFitCount <= 3) {
     return "critical";
   }
-  if (emptyCellCount <= 22 || standardFitCount <= 5) {
+  if (emptyCellCount <= 28 || standardFitCount <= 7) {
     return "warning";
   }
   return "normal";
@@ -3757,7 +3757,9 @@ const DRAG_PREVIEW_LEASH_Y_RATIO = 0.28;
 const DRAG_PREVIEW_LOCK_RATIO = 0.38;
 const DRAG_PREVIEW_SWITCH_RATIO = 0.54;
 const DRAG_PREVIEW_RETAIN_RATIO = 0.92;
-const DRAG_PREVIEW_SAMPLE_RATIO = 0.16;
+const DRAG_PREVIEW_SAMPLE_RATIO = 0.08;
+const DRAG_VALID_SEARCH_RADIUS = 2;
+const DRAG_VALID_SNAP_DISTANCE_RATIO = 1.15;
 let dragGhostFrame = 0;
 
 function beginDrag(slotIndex, pointerId, clientX, clientY) {
@@ -3877,8 +3879,9 @@ function updatePreviewFromPoint(clientX, clientY, slotIndex) {
   }
 
   const boardMetrics = dragging.boardMetrics || getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
+  const ghostReference = getGhostReferencePoint(clientX, clientY, dragging);
   const placement = getBoardPlacementFromGhost(clientX, clientY, piece, dragging, boardMetrics);
-  const retainedPlacement = getRetainedValidPreviewPlacement(clientX, clientY, dragging, boardMetrics);
+  const retainedPlacement = getRetainedValidPreviewPlacement(ghostReference, dragging, boardMetrics);
   if (!placement) {
     if (retainedPlacement) {
       updatePreview(retainedPlacement.row, retainedPlacement.col, slotIndex, piece, true);
@@ -3947,100 +3950,92 @@ function resetDragGhost() {
 }
 
 function getDragAnchorMetrics(slotIndex, piece, clientX, clientY) {
-  const slotEl = trayEls[slotIndex];
-  const pieceEl = slotEl?.querySelector(".slot-piece");
   const shape = SHAPE_MAP[piece.shapeId];
-  const boardMetrics = getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
-  const ghostWidth = shape.width * boardMetrics.cellWidth + Math.max(0, shape.width - 1) * boardMetrics.gapX;
-  const ghostHeight = shape.height * boardMetrics.cellHeight + Math.max(0, shape.height - 1) * boardMetrics.gapY;
-
-  if (!pieceEl || !shape) {
+  if (!shape) {
+    const boardMetrics = getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
     return {
-      anchorRow: 0,
-      anchorCol: 0,
-      ghostOffsetX: ghostWidth / 2,
-      ghostOffsetY: ghostHeight / 2,
-      ghostWidth,
-      ghostHeight,
+      anchorRow: 0.5,
+      anchorCol: 0.5,
+      ghostOffsetX: boardMetrics.cellWidth / 2,
+      ghostOffsetY: boardMetrics.cellHeight / 2,
+      ghostWidth: boardMetrics.cellWidth,
+      ghostHeight: boardMetrics.cellHeight,
+      shapeCenterOffsetX: boardMetrics.cellWidth / 2,
+      shapeCenterOffsetY: boardMetrics.cellHeight / 2,
       boardMetrics,
     };
   }
-
-  const trayMetrics = getGridMetrics(pieceEl, shape.width, shape.height);
-  const localX = clamp(clientX - trayMetrics.rect.left, 0, trayMetrics.rect.width);
-  const localY = clamp(clientY - trayMetrics.rect.top, 0, trayMetrics.rect.height);
-  const anchorCell = getNearestOccupiedCell(shape, trayMetrics, localX, localY);
-  const scaleX = trayMetrics.rect.width > 0 ? ghostWidth / trayMetrics.rect.width : 1;
-  const scaleY = trayMetrics.rect.height > 0 ? ghostHeight / trayMetrics.rect.height : 1;
+  const boardMetrics = getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE);
+  const ghostWidth = shape.width * boardMetrics.cellWidth + Math.max(0, shape.width - 1) * boardMetrics.gapX;
+  const ghostHeight = shape.height * boardMetrics.cellHeight + Math.max(0, shape.height - 1) * boardMetrics.gapY;
+  const referenceOffsets = getShapeReferenceOffsets(shape, boardMetrics);
 
   return {
-    anchorRow: anchorCell.row,
-    anchorCol: anchorCell.col,
-    ghostOffsetX: localX * scaleX,
-    ghostOffsetY: localY * scaleY,
+    anchorRow: referenceOffsets.anchorRow,
+    anchorCol: referenceOffsets.anchorCol,
+    ghostOffsetX: referenceOffsets.centerOffsetX,
+    ghostOffsetY: referenceOffsets.centerOffsetY,
     ghostWidth,
     ghostHeight,
+    shapeCenterOffsetX: referenceOffsets.centerOffsetX,
+    shapeCenterOffsetY: referenceOffsets.centerOffsetY,
     boardMetrics,
   };
 }
 
 function getBoardPlacementFromGhost(clientX, clientY, piece, dragging, boardMetrics = dragging.boardMetrics || getGridMetrics(boardEl, BOARD_SIZE, BOARD_SIZE)) {
-  const lockedPlacement = getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics);
+  const ghostReference = getGhostReferencePoint(clientX, clientY, dragging);
+  const lockedPlacement = getLockedPreviewPlacement(ghostReference, dragging, boardMetrics);
   if (lockedPlacement) {
     return lockedPlacement;
   }
   const snapPaddingX = boardMetrics.cellWidth * DRAG_SNAP_PADDING_RATIO;
   const snapPaddingY = boardMetrics.cellHeight * DRAG_SNAP_PADDING_RATIO;
   if (
-    clientX < boardMetrics.rect.left - snapPaddingX ||
-    clientX > boardMetrics.rect.right + snapPaddingX ||
-    clientY < boardMetrics.rect.top - snapPaddingY ||
-    clientY > boardMetrics.rect.bottom + snapPaddingY
+    ghostReference.left + dragging.ghostWidth < boardMetrics.rect.left - snapPaddingX ||
+    ghostReference.left > boardMetrics.rect.right + snapPaddingX ||
+    ghostReference.top + dragging.ghostHeight < boardMetrics.rect.top - snapPaddingY ||
+    ghostReference.top > boardMetrics.rect.bottom + snapPaddingY
   ) {
     return null;
   }
-  const localX = clamp(clientX - boardMetrics.rect.left, 0, Math.max(boardMetrics.rect.width - 1, 0));
-  const localY = clamp(clientY - boardMetrics.rect.top, 0, Math.max(boardMetrics.rect.height - 1, 0));
-  const anchorBoardRow = clamp(Math.floor((localY + boardMetrics.gapY / 2) / boardMetrics.pitchY), 0, BOARD_SIZE - 1);
-  const anchorBoardCol = clamp(Math.floor((localX + boardMetrics.gapX / 2) / boardMetrics.pitchX), 0, BOARD_SIZE - 1);
   const candidatePlacement = {
-    row: anchorBoardRow - (dragging.anchorRow || 0),
-    col: anchorBoardCol - (dragging.anchorCol || 0),
+    row: Math.round((ghostReference.top - boardMetrics.rect.top) / boardMetrics.pitchY),
+    col: Math.round((ghostReference.left - boardMetrics.rect.left) / boardMetrics.pitchX),
   };
+  const snappedPlacement = getNearestReachablePlacement(candidatePlacement, piece, dragging, boardMetrics, ghostReference);
+  const resolvedPlacement = snappedPlacement || candidatePlacement;
   const preview = state.preview;
   if (
     preview &&
     preview.slotIndex === dragging.slotIndex &&
-    (preview.row !== candidatePlacement.row || preview.col !== candidatePlacement.col)
+    (preview.row !== resolvedPlacement.row || preview.col !== resolvedPlacement.col)
   ) {
     const previewAnchorCenter = getPreviewAnchorCenter(preview, dragging, boardMetrics);
     const switchX = Math.max(boardMetrics.cellWidth * DRAG_PREVIEW_SWITCH_RATIO, 12);
     const switchY = Math.max(boardMetrics.cellHeight * DRAG_PREVIEW_SWITCH_RATIO, 12);
     if (
-      Math.abs(clientX - previewAnchorCenter.x) <= switchX &&
-      Math.abs(clientY - previewAnchorCenter.y) <= switchY
+      Math.abs(ghostReference.x - previewAnchorCenter.x) <= switchX &&
+      Math.abs(ghostReference.y - previewAnchorCenter.y) <= switchY
     ) {
       return { row: preview.row, col: preview.col };
     }
   }
 
-  return candidatePlacement;
+  return resolvedPlacement;
 }
 
-function getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
+function getLockedPreviewPlacement(ghostReference, dragging, boardMetrics) {
   const preview = state.preview;
   if (!preview || !preview.valid || preview.slotIndex !== dragging.slotIndex) {
     return null;
   }
 
-  const anchorRow = preview.row + (dragging.anchorRow || 0);
-  const anchorCol = preview.col + (dragging.anchorCol || 0);
-  const anchorCenterX = boardMetrics.rect.left + anchorCol * boardMetrics.pitchX + boardMetrics.cellWidth / 2;
-  const anchorCenterY = boardMetrics.rect.top + anchorRow * boardMetrics.pitchY + boardMetrics.cellHeight / 2;
+  const anchorCenter = getPreviewAnchorCenter(preview, dragging, boardMetrics);
   const lockX = Math.max(boardMetrics.cellWidth * DRAG_PREVIEW_LOCK_RATIO, 10);
   const lockY = Math.max(boardMetrics.cellHeight * DRAG_PREVIEW_LOCK_RATIO, 10);
 
-  if (Math.abs(clientX - anchorCenterX) <= lockX && Math.abs(clientY - anchorCenterY) <= lockY) {
+  if (Math.abs(ghostReference.x - anchorCenter.x) <= lockX && Math.abs(ghostReference.y - anchorCenter.y) <= lockY) {
     return { row: preview.row, col: preview.col };
   }
 
@@ -4049,9 +4044,10 @@ function getLockedPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
 
 function shouldDeferPreviewUpdate(clientX, clientY, dragging) {
   const boardMetrics = dragging.boardMetrics;
+  const ghostReference = getGhostReferencePoint(clientX, clientY, dragging);
   if (!boardMetrics) {
-    dragging.previewSampleX = clientX;
-    dragging.previewSampleY = clientY;
+    dragging.previewSampleX = ghostReference.x;
+    dragging.previewSampleY = ghostReference.y;
     return false;
   }
 
@@ -4062,27 +4058,25 @@ function shouldDeferPreviewUpdate(clientX, clientY, dragging) {
   if (
     Number.isFinite(dragging.previewSampleX) &&
     Number.isFinite(dragging.previewSampleY) &&
-    Math.abs(clientX - dragging.previewSampleX) < threshold &&
-    Math.abs(clientY - dragging.previewSampleY) < threshold
+    Math.abs(ghostReference.x - dragging.previewSampleX) < threshold &&
+    Math.abs(ghostReference.y - dragging.previewSampleY) < threshold
   ) {
     return true;
   }
 
-  dragging.previewSampleX = clientX;
-  dragging.previewSampleY = clientY;
+  dragging.previewSampleX = ghostReference.x;
+  dragging.previewSampleY = ghostReference.y;
   return false;
 }
 
 function getPreviewAnchorCenter(preview, dragging, boardMetrics) {
-  const anchorRow = preview.row + (dragging.anchorRow || 0);
-  const anchorCol = preview.col + (dragging.anchorCol || 0);
   return {
-    x: boardMetrics.rect.left + anchorCol * boardMetrics.pitchX + boardMetrics.cellWidth / 2,
-    y: boardMetrics.rect.top + anchorRow * boardMetrics.pitchY + boardMetrics.cellHeight / 2,
+    x: boardMetrics.rect.left + preview.col * boardMetrics.pitchX + (dragging.shapeCenterOffsetX ?? boardMetrics.cellWidth / 2),
+    y: boardMetrics.rect.top + preview.row * boardMetrics.pitchY + (dragging.shapeCenterOffsetY ?? boardMetrics.cellHeight / 2),
   };
 }
 
-function getRetainedValidPreviewPlacement(clientX, clientY, dragging, boardMetrics) {
+function getRetainedValidPreviewPlacement(ghostReference, dragging, boardMetrics) {
   const retainedPreview =
     dragging.lastValidPreview && dragging.lastValidPreview.slotIndex === dragging.slotIndex
       ? dragging.lastValidPreview
@@ -4098,11 +4092,85 @@ function getRetainedValidPreviewPlacement(clientX, clientY, dragging, boardMetri
   const retainX = Math.max(boardMetrics.cellWidth * DRAG_PREVIEW_RETAIN_RATIO, 18);
   const retainY = Math.max(boardMetrics.cellHeight * DRAG_PREVIEW_RETAIN_RATIO, 18);
 
-  if (Math.abs(clientX - previewAnchorCenter.x) <= retainX && Math.abs(clientY - previewAnchorCenter.y) <= retainY) {
+  if (Math.abs(ghostReference.x - previewAnchorCenter.x) <= retainX && Math.abs(ghostReference.y - previewAnchorCenter.y) <= retainY) {
     return { row: retainedPreview.row, col: retainedPreview.col };
   }
 
   return null;
+}
+
+function getShapeReferenceOffsets(shape, gridMetrics) {
+  if (!shape?.cells?.length) {
+    return {
+      centerOffsetX: gridMetrics.cellWidth / 2,
+      centerOffsetY: gridMetrics.cellHeight / 2,
+      anchorRow: 0.5,
+      anchorCol: 0.5,
+    };
+  }
+
+  let totalX = 0;
+  let totalY = 0;
+  for (const [row, col] of shape.cells) {
+    totalX += col * gridMetrics.pitchX + gridMetrics.cellWidth / 2;
+    totalY += row * gridMetrics.pitchY + gridMetrics.cellHeight / 2;
+  }
+
+  return {
+    centerOffsetX: totalX / shape.cells.length,
+    centerOffsetY: totalY / shape.cells.length,
+    anchorRow: shape.cells.reduce((sum, [row]) => sum + row + 0.5, 0) / shape.cells.length - 0.5,
+    anchorCol: shape.cells.reduce((sum, [, col]) => sum + col + 0.5, 0) / shape.cells.length - 0.5,
+  };
+}
+
+function getGhostReferencePoint(clientX, clientY, dragging) {
+  const left = clientX - dragging.ghostOffsetX;
+  const top = clientY - dragging.ghostOffsetY;
+  return {
+    left,
+    top,
+    x: left + (dragging.shapeCenterOffsetX ?? dragging.ghostOffsetX),
+    y: top + (dragging.shapeCenterOffsetY ?? dragging.ghostOffsetY),
+  };
+}
+
+function getNearestReachablePlacement(candidatePlacement, piece, dragging, boardMetrics, ghostReference) {
+  const shape = SHAPE_MAP[piece.shapeId];
+  if (!shape) {
+    return null;
+  }
+
+  let bestPlacement = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  const minRow = Math.max(0, candidatePlacement.row - DRAG_VALID_SEARCH_RADIUS);
+  const maxRow = Math.min(BOARD_SIZE - shape.height, candidatePlacement.row + DRAG_VALID_SEARCH_RADIUS);
+  const minCol = Math.max(0, candidatePlacement.col - DRAG_VALID_SEARCH_RADIUS);
+  const maxCol = Math.min(BOARD_SIZE - shape.width, candidatePlacement.col + DRAG_VALID_SEARCH_RADIUS);
+
+  for (let row = minRow; row <= maxRow; row += 1) {
+    for (let col = minCol; col <= maxCol; col += 1) {
+      if (!canPlacePiece(state.board, piece, row, col)) {
+        continue;
+      }
+      const placementCenter = getPreviewAnchorCenter({ row, col }, dragging, boardMetrics);
+      const distance = Math.hypot(ghostReference.x - placementCenter.x, ghostReference.y - placementCenter.y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestPlacement = { row, col };
+      }
+    }
+  }
+
+  if (!bestPlacement) {
+    return null;
+  }
+
+  const maxSnapDistance = Math.max(
+    Math.max(boardMetrics.cellWidth, boardMetrics.cellHeight) * DRAG_VALID_SNAP_DISTANCE_RATIO,
+    18
+  );
+  return bestDistance <= maxSnapDistance ? bestPlacement : null;
 }
 
 // LEGACY_DUPLICATE_STUB
